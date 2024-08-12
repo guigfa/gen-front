@@ -1,0 +1,26 @@
+@if(course) {
+    <div class="dialog__container">
+        <h2>{{ course.name }}</h2>
+        
+        <h3>{{ course.description }}</h3>
+
+
+        @if(add) {
+            <app-form (submit)="addLesson()" [form]="form"></app-form>
+        } @else {
+            <button mat-raised-button color="primary" (click)="add = true">
+                <mat-icon>add</mat-icon>
+                <span>Add lesson</span>
+            </button>
+        }
+    
+        <app-grid 
+            [dataSource]="course.lessons" 
+            [displayedColumns]="displayedColumns" 
+            (delete)="deleteLesson($event)"
+            (edit)="editLesson($event)"
+            [type]="'lessons'"
+        />
+    </div>
+
+}

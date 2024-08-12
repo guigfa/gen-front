@@ -1,0 +1,34 @@
+@defer() {
+    <form [formGroup]="form">
+        
+        @for(control of controls; track control) {
+            @if(!control.includes('id') && !control.includes('Id') && !control.includes('active')) {
+                <mat-form-field>
+                    <label>{{ control | titlecase }}</label>
+                    @if(control === 'level') {
+                        <mat-select [formControlName]="control">
+                            @for(level of levelOptions; track level) {
+                                <mat-option [value]="level">
+                                    {{ level | titlecase }}
+                                </mat-option>
+                            }
+                        </mat-select>
+                    }@else {
+                        <input matInput [formControlName]="control" placeholder="{{ control | titlecase }}">
+                    }
+                    @if(form.get(control)?.hasError('required')) {
+                        <mat-error>
+                            {{ control | titlecase }} is required.
+                        </mat-error>
+                    }
+                </mat-form-field>
+            }
+        }
+        <div class="actions__buttons">
+            <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="create()">Create</button>
+            <button mat-stroked-button color="warning" (click)="clean()">
+                <span>Clean</span>
+            </button>
+        </div>
+    </form>
+}

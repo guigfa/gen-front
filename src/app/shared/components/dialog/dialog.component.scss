@@ -1,0 +1,10 @@
+:host {
+    .dialog__container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-items: center;
+        gap: 1rem;
+        padding: 2rem;
+    }
+}

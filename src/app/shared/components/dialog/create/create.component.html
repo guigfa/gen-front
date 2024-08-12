@@ -1,0 +1,6 @@
+@if(form) {
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <app-form [form]="form" (submit)="create($event)"></app-form>
+    </div>
+}

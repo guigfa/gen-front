@@ -1,0 +1,15 @@
+<div class="container">
+    <h1>Courses</h1>
+    <button mat-stroked-button (click)="openCreateModal()">Add course<mat-icon>add</mat-icon></button>
+    
+    @if(courses) {
+        <app-grid 
+            (edit)="editCourse($event)" 
+            (add)="addLessons($event)" 
+            (delete)="deleteCourse($event)"
+            [type]="'courses'"
+            [dataSource]="courses" 
+            [displayedColumns]="displayedColumns" 
+        />
+    }
+</div>

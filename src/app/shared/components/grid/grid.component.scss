@@ -1,0 +1,15 @@
+:host {
+    display: flex;
+    justify-content: center;
+    
+    .container {
+        max-width: 80vw;
+    }
+    th {
+        text-align: center;
+    }
+
+    td {
+        text-align: center;
+    }
+}
