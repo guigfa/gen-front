@@ -1,34 +1,36 @@
 <div class="container">
     <h1>Lessons</h1>
     @if(!filtering) {
-        <div class="filter__container">
-            <form [formGroup]="filterForm">
-                <mat-form-field>
-                    <input matInput formControlName="title" placeholder="Name">
-                </mat-form-field>
-                <mat-form-field>
-                    <input matInput formControlName="content" placeholder="Description">
-                </mat-form-field>
-                <mat-form-field>
-                    <mat-select formControlName="level">
-                        @for(level of levelOptions; track level) {
-                            <mat-option [value]="level">
-                                {{ level | titlecase }}
-                            </mat-option>
-                        }
-                    </mat-select>
-                </mat-form-field>
-            </form>
-            <button mat-stroked-button (click)="filter()">Filter lessons</button>
-        </div>
+    <div class="filter__container">
+        <form [formGroup]="filterForm">
+            <mat-form-field>
+                <input matInput formControlName="title" placeholder="Name">
+            </mat-form-field>
+            <mat-form-field>
+                <input matInput formControlName="content" placeholder="Description">
+            </mat-form-field>
+            <mat-form-field>
+                <mat-select formControlName="level">
+                    @for(level of levelOptions; track level) {
+                    <mat-option [value]="level">
+                        {{ level | titlecase }}
+                    </mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </form>
+        <button mat-stroked-button (click)="filter()">Filter lessons</button>
+    </div>
     } @else {
-        <button mat-stroked-button (click)="clearFilter()">Clear filter</button>
+    <button mat-stroked-button (click)="clearFilter()">Clear filter</button>
     }
 
-<app-grid 
-    (edit)="editLesson($event)" 
-    (delete)="deleteLesson($event)"
-    [type]="'course'"
-    [dataSource]="lessons" 
-    [displayedColumns]="displayedColumns" 
-/>
+    @defer() {
+        @if(lessons.length) {
+        <app-grid (edit)="editLesson($event)" (delete)="deleteLesson($event)" [type]="'course'" [dataSource]="lessons"
+            [displayedColumns]="displayedColumns" />
+        } @else {
+        <h2>No lessons found.</h2>
+        }
+    }
+</div>

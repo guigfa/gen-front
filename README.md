@@ -1,27 +1,29 @@
-# GenFront
+# Visão Geral
+## Aplicação Angular 18 para o Front End de busca e cadastro de cursos e aulas para o Teste Técnico da GEN.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.1.3.
+## Requisitos
+- IDE de sua preferência
 
-## Development server
+## Configuração
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+### 1. Clone o projeto
+- Execute os seguites comandos no seu terminal:
+```
+    git clone https://github.com/guigfa/gen-front.git
+    cd gen-front
+```
 
-## Code scaffolding
+### 2. Subir a aplicação Angular
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- Instale as dependências do projeto:
 
-## Build
+```
+npm install
+```
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Para iniciar a aplicação, execute o comando:
+```
+npm run start
+```
 
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### A aplicação estará disponível em http://localhost:4200.

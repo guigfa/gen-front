@@ -4,7 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { catchError, map, Observable, of, Subscription, switchMap } from 'rxjs';
+import { catchError, EMPTY, map, Observable, of, Subscription, switchMap } from 'rxjs';
 import { FormComponent } from '../../../shared/components/form/form.component';
 import { GridComponent } from '../../../shared/components/grid/grid.component';
 import { Course } from '../../../shared/models/course.model';
@@ -14,6 +14,7 @@ import { DialogService } from '../../../shared/services/dialog/dialog.service';
 import { DialogComponent } from '../../../shared/components/dialog/dialog.component';
 import { DeleteComponent } from '../../../shared/components/dialog/delete/delete.component';
 import { CreateComponent } from '../../../shared/components/dialog/create/create.component';
+import { LessonsService } from '../lessons/services/lessons.service';
 
 @Component({
   selector: 'app-courses',
@@ -24,7 +25,8 @@ import { CreateComponent } from '../../../shared/components/dialog/create/create
 })
 export class CoursesComponent implements OnInit, OnDestroy {
   protected displayedColumns = ['name', 'description', 'actions'];
-  private _service = inject(CoursesService);
+  private _coursesService = inject(CoursesService);
+  private _lessonsService = inject(LessonsService);
   private _dialog = inject(DialogService);
   private _alert = inject(AlertService);
   protected courses!: Course[];
@@ -41,11 +43,17 @@ export class CoursesComponent implements OnInit, OnDestroy {
   }
 
   private _getCourses(): Observable<Course[]> {
-    return this._service.getCourses().pipe(map(course => course.data));
+    return this._coursesService.getCourses().pipe(map(course => {
+      course.data = course.data.map((course: Course) => {
+        course.lessons = course.lessons.filter(lesson => lesson.active);
+        return course;
+      });
+      return course.data;
+    }));
   }
 
   create(course: Course) {
-    this._subscription = this._service.createCourse(course)
+    this._subscription = this._coursesService.createCourse(course)
       .pipe(
         catchError(error => {
           this._alert.open('An error occurred while creating the course');
@@ -66,7 +74,7 @@ export class CoursesComponent implements OnInit, OnDestroy {
   }
 
   update(course: Course) {
-    this._subscription = this._service.updateCourse(course)
+    this._subscription = this._coursesService.updateCourse(course)
       .pipe(
         catchError(error => {
           this._alert.open('An error occurred while updating the course');
@@ -83,17 +91,15 @@ export class CoursesComponent implements OnInit, OnDestroy {
 
   protected deleteCourse(course: Course) {
     const dialogRef = this._dialog.open(DeleteComponent, {});
-
-    this._subscription = dialogRef.pipe(
+  
+    this._subscription = dialogRef.pipe( 
       switchMap(confirmed => {
-        if (confirmed) {
-          return this._service.deleteCourse(course.id).pipe(
-            switchMap((resp) => {
-              return this._getCourses();
-            })
-          );
+        if (!confirmed) {
+          return EMPTY;
         }
-        return of([]);
+        return this._coursesService.deleteCourse(course.id).pipe(
+          switchMap(() => this._getCourses())
+        );
       })
     ).subscribe(courses => {
       if (courses) {
@@ -104,38 +110,73 @@ export class CoursesComponent implements OnInit, OnDestroy {
   }
 
   addLessons(course: Course) {
-    this._dialog.open(DialogComponent, { course })
+    this._subscription = this._dialog.open(DialogComponent, { course })
       .pipe(
-        switchMap(() => this._getCourses())
-      )
+        switchMap(() => this._getCourses()),
+        catchError(err => {
+          this._alert.open('An error occurred while adding lessons to the course');
+          return of([]);
+        }
+      ))
       .subscribe(courses => {
+        this._lessonsService.setSubject(true);
         this.courses = courses;
       });
   }
 
-
   editCourse(course: Course) {
-    this.form.patchValue(course)
-  }
-
-  openCreateModal() {
-    this._dialog.open(CreateComponent, {
+    this.form.patchValue(course);
+    this._subscription = this._dialog.open(CreateComponent, {
       form: this.form,
-      title: 'Create Course'
+      title: 'Edit Course'
     }).subscribe(response => {
-      if(!response) return;
-      this._subscription = this._service.createCourse(response).pipe(
+      if (!response) return;
+      response = {
+        ...response,
+        id: course.id
+      };
+      this._subscription = this._coursesService.updateCourse(response).pipe(
         catchError(err => {
-          this._alert.open(err.error.message);
+          this._alert.open(err.error.message || 'An error occurred while updating the course');
           return of(null);
         })
       ).subscribe(res => {
-        if(res) {
+        if (res) {
           this._alert.open(res.message);
           this._getCourses().subscribe(courses => this.courses = courses);
         }
       })
     })
+  }
+
+  openCreateModal() {
+    this._subscription = this._dialog.open(CreateComponent, {
+      form: this.form,
+      title: 'Create Course'
+    }).pipe(  
+      switchMap(response => {
+        if (!response) {
+          return EMPTY;
+        }
+        return this._coursesService.createCourse(response).pipe(
+          catchError(err => {
+            this._alert.open(err.error.message || 'An error occurred while creating the course');
+            return of(null); 
+          })
+        );
+      }),
+      switchMap(res => {
+        if (res) {
+          this._alert.open(res.message);
+          return this._getCourses(); 
+        }
+        return EMPTY; 
+      })
+    ).subscribe(courses => {
+      if (courses) {
+        this.courses = courses;
+      }
+    });
   }
 
   clean() {

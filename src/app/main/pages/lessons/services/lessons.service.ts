@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { Observable } from 'rxjs';
 import { Lesson } from '../../../../shared/models/lesson.model';
 import { AjaxResponse } from '../../../../shared/models/response.model';
 import { ObjectHelper } from '../../../../shared/utils/object-helper';
@@ -12,8 +12,14 @@ import { ObjectHelper } from '../../../../shared/utils/object-helper';
 export class LessonsService {
   private _http = inject(HttpClient);
   private readonly _baseUrl = environment.url;
+  private subject = new BehaviorSubject<boolean>(true);
+  public subject$ = this.subject.asObservable();
 
-  public getLessons(query?: Partial<Lesson>): Observable<Lesson[]> {
+  public setSubject(value: boolean) {
+    this.subject.next(value);
+  };
+
+  public getLessons(query?: Partial<any>): Observable<Lesson[]> {
     query = { ...query, active: true };
     query = ObjectHelper.removeEmptyKeys(query);
 

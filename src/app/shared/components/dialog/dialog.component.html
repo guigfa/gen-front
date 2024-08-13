@@ -13,14 +13,17 @@
                 <span>Add lesson</span>
             </button>
         }
-    
-        <app-grid 
-            [dataSource]="course.lessons" 
-            [displayedColumns]="displayedColumns" 
-            (delete)="deleteLesson($event)"
-            (edit)="editLesson($event)"
-            [type]="'lessons'"
-        />
+        
+        @if(!add && !_isEditing) {
+            <app-grid 
+                [dataSource]="course.lessons" 
+                [displayedColumns]="displayedColumns" 
+                (delete)="deleteLesson($event)"
+                (edit)="editLesson($event)"
+                [type]="'lessons'"
+            />
+        }
+       
     </div>
 
 }

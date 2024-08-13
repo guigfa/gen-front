@@ -19,8 +19,8 @@ export class CoursesService {
     return this._http.get<AjaxResponse>(`${this._baseUrl}/courses`, { params: query });
   }
 
-  public getCourseById(id: string): Observable<Course> {
-    return this._http.get<Course>(`${this._baseUrl}/courses/${id}`);
+  public getCourseById(id: string): Observable<AjaxResponse> {
+    return this._http.get<AjaxResponse>(`${this._baseUrl}/courses/${id}`);
   }
 
   public createCourse(course: Course): Observable<AjaxResponse> {
@@ -28,7 +28,10 @@ export class CoursesService {
   }
 
   public updateCourse(course: Partial<Course>): Observable<AjaxResponse> {
-    return this._http.put<AjaxResponse>(`${this._baseUrl}/courses/${course.id}`, course);
+    const id = course.id;
+    delete course.id;
+
+    return this._http.put<AjaxResponse>(`${this._baseUrl}/courses/${id}`, course);
   }
 
   public deleteCourse(id: string): Observable<AjaxResponse> {

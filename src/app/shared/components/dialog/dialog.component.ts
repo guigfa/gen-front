@@ -9,7 +9,8 @@ import { LessonsService } from '../../../main/pages/lessons/services/lessons.ser
 import { FormComponent } from '../form/form.component';
 import { Lesson } from '../../models/lesson.model';
 import { AlertService } from '../../services/alert/alert.service';
-import { catchError, finalize, of } from 'rxjs';
+import { catchError, EMPTY, finalize, of, Subscription, switchMap } from 'rxjs';
+import { CoursesService } from '../../../main/pages/courses/services/courses.service';
 
 @Component({
   selector: 'app-dialog',
@@ -19,12 +20,14 @@ import { catchError, finalize, of } from 'rxjs';
   styleUrl: './dialog.component.scss'
 })
 export class DialogComponent {
-  private _service = inject(LessonsService);
+  private _lessonService = inject(LessonsService);
+  private _courseService = inject(CoursesService);
   private _alert = inject(AlertService);
   protected course!: Course;
+  private _subscription!: Subscription;
   private _loading = false;
   protected displayedColumns = ['title', 'content', 'actions'];
-  private _isEditing = false;
+  protected _isEditing = false;
   protected add = false;
   protected form = new FormGroup({
     title: new FormControl('', Validators.required),
@@ -44,25 +47,32 @@ export class DialogComponent {
   }
 
   protected addLesson() {
-    if(this._loading) return;
+    if (this._loading) return;
     this._loading = true;
-    const action$ = this._isEditing 
-      ? this._service.updateLesson({...this.form.value} as Lesson) 
-      : this._service.createLesson(this.form.value as Lesson);
-
-    action$
-    .pipe(
-      finalize(() => {
-        this._disableFlags();
-      })
-    )
-    .subscribe(response => {
-        if(response) {
+  
+    const action$ = this._isEditing
+      ? this._lessonService.updateLesson({ ...this.form.value } as Lesson)
+      : this._lessonService.createLesson(this.form.value as Lesson);
+  
+    this._subscription = action$.pipe(
+      switchMap(response => {
+        if (response) {
           this._alert.open(response.message);
-        };
-      });
+          return this._courseService.getCourseById(this.course.id);
+        }
+        return EMPTY; 
+      }),
+      finalize(() => {
+        this._disableFlags(); 
+      })
+    ).subscribe(({ data }) => {
+      if (data) {
+        data.lessons = data.lessons.filter((lesson: Lesson) => lesson.active);
+        this.course.lessons = data.lessons;
+      }
+    });
   }
-
+  
   private _disableFlags() {
     this._isEditing = false;
     this._loading = false;
@@ -70,7 +80,7 @@ export class DialogComponent {
   }
 
   protected deleteLesson(lesson: Lesson) {
-    this._service.deleteLesson(lesson.id)
+    this._subscription = this._lessonService.deleteLesson(lesson.id)
     .pipe(
       catchError(err => {
         this._alert.open(err.error.message);
@@ -79,6 +89,7 @@ export class DialogComponent {
     )
     .subscribe(res => {
       if(res) {
+        this.course.lessons = this.course.lessons.filter(l => l.id !== lesson.id);
         this._alert.open(res.message);
       }
     });
@@ -94,5 +105,9 @@ export class DialogComponent {
       active: true,
       id: lesson.id
     });
+  }
+
+  ngOnDestroy() {
+    this._subscription?.unsubscribe();
   }
 }

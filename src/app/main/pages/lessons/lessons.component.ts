@@ -1,20 +1,19 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { catchError, Observable, of, Subscription, switchMap } from 'rxjs';
-import { Lesson } from '../../../shared/models/lesson.model';
-import { LessonsService } from './services/lessons.service';
-import { ActivatedRoute } from '@angular/router';
 import { AsyncPipe, TitleCasePipe } from '@angular/common';
-import { AlertService } from '../../../shared/services/alert/alert.service';
-import { GridComponent } from '../../../shared/components/grid/grid.component';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { DialogService } from '../../../shared/services/dialog/dialog.service';
-import { DeleteComponent } from '../../../shared/components/dialog/delete/delete.component';
-import { DialogComponent } from '../../../shared/components/dialog/dialog.component';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { ActivatedRoute } from '@angular/router';
+import { catchError, filter, finalize, Observable, of, Subscription, switchMap } from 'rxjs';
 import { CreateComponent } from '../../../shared/components/dialog/create/create.component';
+import { DeleteComponent } from '../../../shared/components/dialog/delete/delete.component';
+import { GridComponent } from '../../../shared/components/grid/grid.component';
+import { Lesson } from '../../../shared/models/lesson.model';
+import { AlertService } from '../../../shared/services/alert/alert.service';
+import { DialogService } from '../../../shared/services/dialog/dialog.service';
+import { LessonsService } from './services/lessons.service';
 
 @Component({
   selector: 'app-lessons',
@@ -50,35 +49,39 @@ export class LessonsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.courseId = this._route.snapshot.params['id'];
-    this._subscription = this._getLessons().subscribe(lessons => this.lessons = lessons);
+    this._subscription = this._service.subject$.pipe(
+      filter(response => !!response),  
+      switchMap(() => this._getLessons()),
+      finalize(() => this._service.setSubject(false))  
+    ).subscribe(lessons => {
+      this.lessons = lessons;
+    });
   }
 
   private _getLessons(query?: Partial<Lesson>): Observable<Lesson[]> {
     return this._service.getLessons(query);
   }
 
-  protected deleteLesson(lesson: Lesson) {
+  protected deleteLesson(lesson: Lesson): void {
     const dialogRef = this._dialog.open(DeleteComponent, {});
-
+  
     this._subscription = dialogRef.pipe(
       switchMap(confirmed => {
         if (confirmed) {
           return this._service.deleteLesson(lesson.id).pipe(
-            switchMap((resp) => {
-              return this._getLessons();
-            })
+            switchMap(() => this._getLessons())
           );
         }
-        return of([]);
+        return of(null); 
       })
     ).subscribe(lessons => {
-      if (this.lessons.length) {
+      if (lessons) {
         this.lessons = lessons;
         this._alert.open('Lesson deleted successfully');
       }
     });
   }
-
+  
 
   editLesson(lesson: Lesson): void {
     this.form.patchValue(lesson);
@@ -87,22 +90,27 @@ export class LessonsComponent implements OnInit, OnDestroy {
       form: this.form,
       title: 'Edit Lesson',
     }).pipe(
-      switchMap((updatedLesson: Lesson) => 
-        this._service.updateLesson(updatedLesson).pipe(
+      switchMap((updatedLesson: Lesson) => {
+        if(!updatedLesson) {
+          return of(null);
+        }
+        return this._service.updateLesson(updatedLesson).pipe(
           catchError(error => {
             this._alert.open('Failed to update lesson');
             return of(null); 
           })
         )
-      ),
+    }),
       catchError(error => {
         this._alert.open('Failed to open dialog');
         return of(null); 
       })
     ).subscribe(response => {
+      if(response) {
         this._alert.open('Lesson updated successfully');
         this._subscription = this._getLessons().subscribe(lessons => this.lessons = lessons);
         this.form.reset();
+      }
     });
   }
 
